@@ -1,0 +1,106 @@
+'use strict';
+function createTask(id,description,urgent,privat,deadline){
+    this.id=id;
+    this.description=description;
+    this.urgent=urgent;
+    this.privat=privat;
+    this.deadline=deadline;
+}
+function TaskList(){
+    this.tasks=[];
+    this.add=(task)=>{this.tasks.push(task)};
+    this.sortAndPrint=()=>{
+        results=this.tasks.sort((a,b)=>{
+            if(a.deadline==undefined)
+                return 1;
+            else if(b.deadline==undefined)
+                return -1;
+            else
+                return a.deadline.format().subtract(b.deadline.format());
+        });
+        for(task of results)
+            console.log(task);
+        
+    };
+    this.filterAndPrint= ()=>{
+        results=this.tasks.filter(task=>task.urgent===true);
+            if(results.lenght>=1){
+                for(task of results)
+                    console.log(task);
+            }
+            else
+                return undefined;
+    }
+}
+function TaskListdb(){
+    this.tasks=[];
+    this.add=(task)=>{this.tasks.push(task)};
+    this.getAll=async()=>{
+        const sql= "SELECT tasks.id, tasks.description, tasks.urgent, tasks.private, tasks.deadline FROM tasks";
+    return new Promise((resolve,reject)=>{
+        db.all(sql,(err,rows)=>{
+            if(err){
+                reject(err);
+            }
+            else{
+                let list=new TaskList();
+                    for(row of rows){
+                        let task=new createTask(row.id,row.description,row.urgent,row.private,row.deadline);
+                        list.add(task);
+                        console.log(task);
+                    }
+                resolve(list);
+            }
+        });
+    });
+    }
+    this.getAfterDate=async(date)=>{
+        const sql= 'SELECT tasks.id, tasks.description, tasks.urgent, tasks.private, tasks.deadline FROM tasks WHERE tasks.deadline>?';
+    return new Promise((resolve,reject)=>{
+        db.get(sql,[date],(err,rows)=>{
+            if(err){
+                reject(err);
+            }
+            else{
+                let list=new TaskList();
+                    for(row of rows){
+                        let task=new createTask(row.id,row.description,row.urgent,row.private,row.deadline);
+                        list.add(task);
+                        console.log(task);
+                    }
+                resolve(list);
+            }
+        });
+    });
+    }
+    this.getGivenWord=async(word)=>{
+        word= '%'+word+'%';
+        const sql= 'SELECT tasks.id, tasks.description, tasks.urgent, tasks.private, tasks.deadline FROM tasks WHERE tasks.description like npm?';
+        return new Promise((resolve,reject)=>{
+            db.get(sql,[word],(err,rows)=>{
+                if(err){
+                    reject(err);
+                }
+                else{
+                    let list=new TaskList();
+                        for(row of rows){
+                            let task=new createTask(row.id,row.description,row.urgent,row.private,row.deadline);
+                            list.add(task);
+                            console.log(task);
+                        }
+                    resolve(list);
+                }
+            });
+        });
+    }
+    
+}
+const sqlite = require('sqlite3');
+const db= new sqlite.Database('tasks.sqlite',(err)=>{if(err) throw err;});
+async function main(){
+    let list=await getAll();
+    let list1=await getAfterDate('2019-01-21');
+    let list2=await getGivenWord('ciao');
+
+}
+main();
